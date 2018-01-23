@@ -1,0 +1,62 @@
+#######################################
+# Syntax Coloring Map For SmartSerial
+#######################################
+
+#######################################
+# Library (KEYWORD3)
+#######################################
+
+SmartSerial	KEYWORD3
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+SmartSSP	KEYWORD1
+SmartMSP	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+begin	KEYWORD2
+handle	KEYWORD2
+
+available	KEYWORD2
+
+getDataID	KEYWORD2
+getCommandID	KEYWORD2
+getPacketType	KEYWORD2
+getPayload	KEYWORD2
+getSize	KEYWORD2
+
+attachRequest	KEYWORD2
+attachValue	KEYWORD2
+attachArray	KEYWORD2
+attachEvent	KEYWORD2
+attachError	KEYWORD2
+attachReset	KEYWORD2
+
+sendData	KEYWORD2
+sendRequast	KEYWORD2
+sendCommand	KEYWORD2
+sendReset	KEYWORD2
+setDebug	KEYWORD2
+
+setCallbackTimeout	KEYWORD2
+setAnswerTimeout	KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+
+TAG_MSP	LITERAL1
+TAG_DBG	LITERAL1
+
+TYPE_REPLY	LITERAL1
+TYPE_EVENT	LITERAL1
+TYPE_ARRAY	LITERAL1
+TYPE_VALUE	LITERAL1
+TYPE_ERROR	LITERAL1
+TYPE_RESET	LITERAL1
+TYPE_REQUEST	LITERAL1
