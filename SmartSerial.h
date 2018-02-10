@@ -25,6 +25,17 @@
  * https://github.com/denisn73/SmartSerial
  * ------------------------------------------------------------------------
  */
+/* ------------------------------------------------------------------------
+ * Release Notes:
+ * ------------------------------------------------------------------------
+ *   SmartSerial v1.0 :
+ *    - First release to open source
+ * ------------------------------------------------------------------------
+ *   SmartSerial v1.1 :
+ *    - Change 'serial' object from Stream* to USBSerial*
+ *    - Fixed USBSerial buffer overflow by add "if(!serial->isConnected())"
+ * ------------------------------------------------------------------------
+ */
 
 #ifndef _SMART_SERIAL_H_
 #define _SMART_SERIAL_H_
@@ -76,7 +87,9 @@ class SmartSSP {
     void construct();
     bool isHardwareSerial = false;
     HardwareSerial* Hardwareserial;
-    Stream*         serial;
+    #ifdef _VARIANT_ARDUINO_STM32_
+    USBSerial*      serial;
+	#endif
 		
     bool    parseData();
     void    processData();
@@ -252,12 +265,18 @@ class SmartSSP {
     template<class... T>
     void simplePrint(T... args) {
 		if(!_isDebug) return;
+		#ifdef _VARIANT_ARDUINO_STM32_
+		if(!serial->isConnected()) return;
+		#endif
         serial->print(args...);
     }
 	
 	template<class F, class S, class... T >
 	void debug(F arg, S index, T... args) {
 		if(!_isDebug) return;
+		#ifdef _VARIANT_ARDUINO_STM32_
+		if(!serial->isConnected()) return;
+		#endif
         serial->print(TAG_DBG);
         serial->print(arg);
         serial->print("[");
@@ -273,6 +292,9 @@ class SmartSSP {
     template<class F, class... T>
     void debug(F arg, T... args) {
 		if(!_isDebug) return;
+		#ifdef _VARIANT_ARDUINO_STM32_
+		if(!serial->isConnected()) return;
+		#endif
         serial->print(TAG_DBG);
         serial->print(arg);
         if(sizeof...(args) > 0) {
@@ -285,12 +307,18 @@ class SmartSSP {
 	template<class F>
     void debug(F arg, uint32_t size) {
 		if(!_isDebug) return;
+		#ifdef _VARIANT_ARDUINO_STM32_
+		if(!serial->isConnected()) return;
+		#endif
         serial->print(TAG_DBG);
         serial->println(arg, size);
     };
     
     template<class... T>
     void error(T... args) {
+	  #ifdef _VARIANT_ARDUINO_STM32_
+	  if(!serial->isConnected()) return;
+	  #endif
       serial->print(TAG_DBG);
       serial->print("error: ");
       serial->println(args...);
