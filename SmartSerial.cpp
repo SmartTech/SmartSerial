@@ -37,7 +37,7 @@ SmartSSP::SmartSSP(USBSerial* _serial) :
 #endif
 
 SmartSSP::SmartSSP(HardwareSerial* _serial, int pinTXen) :
-  Hardwareserial(_serial), _pinTX(pinTXen), _inputChar()
+  Hardwareserial(_serial), serial(_serial), _pinTX(pinTXen), _inputChar()
 {
   construct();
   isHardwareSerial = true;

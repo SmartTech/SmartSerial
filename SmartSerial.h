@@ -89,6 +89,8 @@ class SmartSSP {
     HardwareSerial* Hardwareserial;
     #ifdef _VARIANT_ARDUINO_STM32_
     USBSerial*      serial;
+	#else
+	HardwareSerial* serial;
 	#endif
 		
     bool    parseData();
