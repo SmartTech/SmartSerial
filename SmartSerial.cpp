@@ -37,7 +37,10 @@ SmartSSP::SmartSSP(USBSerial* _serial) :
 #endif
 
 SmartSSP::SmartSSP(HardwareSerial* _serial, int pinTXen) :
-  Hardwareserial(_serial), serial(_serial), _pinTX(pinTXen), _inputChar()
+#ifndef _VARIANT_ARDUINO_STM32_
+  serial(_serial),
+#endif
+  Hardwareserial(_serial), _pinTX(pinTXen), _inputChar()
 {
   construct();
   isHardwareSerial = true;
