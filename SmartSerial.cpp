@@ -37,9 +37,9 @@ SmartSSP::SmartSSP(USBSerial* _serial) :
 #endif
 
 SmartSSP::SmartSSP(HardwareSerial* _serial, int pinTXen) :
-#ifndef _VARIANT_ARDUINO_STM32_
-  serial(_serial),
-#endif
+//#ifndef _VARIANT_ARDUINO_STM32_
+//  serial(_serial),
+//#endif
   Hardwareserial(_serial), _pinTX(pinTXen), _inputChar()
 {
   construct();
@@ -65,7 +65,7 @@ void SmartSSP::begin() {
 /// Begin using custom settings
 void SmartSSP::begin(long baud, uint8_t nodeID) {
   if(isHardwareSerial) Hardwareserial->begin(_baud=baud);
-  else Serial.begin(baud);
+  else serial->begin(baud);
   setNodeID(nodeID);
   if(_pinTX != PIN_UNCONNECTED) {
 	  pinMode(_pinTX, OUTPUT);
@@ -96,19 +96,33 @@ void SmartSSP::sendPacket() {
   
   enableTX();
   
-  #ifdef _VARIANT_ARDUINO_STM32_
-  if(!serial->isConnected()) return;
-  #endif
   
-  //serial->println();
-  serial->print(TAG_MSP);
-  serial->print(TAG_TYPE);  hexPrinting(outPacket.packetType);
-  serial->print(TAG_NODE);  hexPrinting(outPacket.nodeID);
-  serial->print(TAG_CMD);   hexPrinting(outPacket.commandID);
-  serial->print(TAG_SIZE);  hexPrinting(outPacket.datasize);
-  serial->print(TAG_DATA);  for(int i=0; i<outPacket.datasize; i++) hexPrinting(outPacket.payload[i]);
-  serial->print(TAG_CRC);   hexPrinting(outPacket.parity);
-  serial->println();
+  
+  if(isHardwareSerial) {
+	  //Hardwareserial->println();
+	  Hardwareserial->print(TAG_MSP);
+	  Hardwareserial->print(TAG_TYPE);  hexPrinting(outPacket.packetType);
+	  Hardwareserial->print(TAG_NODE);  hexPrinting(outPacket.nodeID);
+	  Hardwareserial->print(TAG_CMD);   hexPrinting(outPacket.commandID);
+	  Hardwareserial->print(TAG_SIZE);  hexPrinting(outPacket.datasize);
+	  Hardwareserial->print(TAG_DATA);  for(int i=0; i<outPacket.datasize; i++) hexPrinting(outPacket.payload[i]);
+	  Hardwareserial->print(TAG_CRC);   hexPrinting(outPacket.parity);
+	  Hardwareserial->println();
+
+  } else {
+	  #ifdef _VARIANT_ARDUINO_STM32_
+	  if(!serial->isConnected()) return;
+	  #endif
+	  //serial->println();
+	  serial->print(TAG_MSP);
+	  serial->print(TAG_TYPE);  hexPrinting(outPacket.packetType);
+	  serial->print(TAG_NODE);  hexPrinting(outPacket.nodeID);
+	  serial->print(TAG_CMD);   hexPrinting(outPacket.commandID);
+	  serial->print(TAG_SIZE);  hexPrinting(outPacket.datasize);
+	  serial->print(TAG_DATA);  for(int i=0; i<outPacket.datasize; i++) hexPrinting(outPacket.payload[i]);
+	  serial->print(TAG_CRC);   hexPrinting(outPacket.parity);
+	  serial->println();
+  }
   
 }
 
@@ -117,8 +131,13 @@ bool SmartSSP::handle() {
   static uint8_t processDataFlag = false;
   if(isTX() && (micros() > _txMicros)) disableTX();
   _ready = false;
-  while(serial->available()) {
-    char inChar = (char) serial->read();
+  int available;
+  if(isHardwareSerial) available = Hardwareserial->available();
+  else available = serial->available();
+  while(available) {
+    char inChar;
+	if(isHardwareSerial) inChar = (char) Hardwareserial->read();
+	else inChar = (char) serial->read();
     if(inChar != '\n') {
       if(inChar != '\r') {
         if(_inCounter<5) _checkMSP += inChar;
@@ -148,6 +167,8 @@ bool SmartSSP::handle() {
       _checkMSP = "";
       _inCounter = 0;
     }
+    if(isHardwareSerial) available = Hardwareserial->available();
+    else available = serial->available();
   }
   if(processDataFlag && (micros() >= _callbackTimeoutMicros)) {
 	  processDataFlag = false;
@@ -217,21 +238,34 @@ bool SmartSSP::parseData() {
 
 /// 
 bool SmartSSP::available() {
+  if(isHardwareSerial) return Hardwareserial->available();
   return serial->available();
 }
 
 /// HexPrinting: helper function to print data with a constant field width (1 hex values)
 void SmartSSP::hexPrinting(uint8_t& data) {
-  if(data<16) serial->print(0, HEX);
-  serial->print(data, HEX);
+  if(isHardwareSerial) {
+	  if(data<16) Hardwareserial->print(0, HEX);
+	  Hardwareserial->print(data, HEX);
+  } else {
+	  if(data<16) serial->print(0, HEX);
+	  serial->print(data, HEX);
+  }
 }
 
 /// HexPrinting: helper function to print data with a constant field width (2 hex values)
 void SmartSSP::hexPrinting(int16_t& data) {
-  if(data<4096) serial->print(0, HEX);
-  if(data<256)  serial->print(0, HEX);
-  if(data<16)   serial->print(0, HEX);
-  serial->print(uint16_t(data), HEX);              // casting to suppress FFFF for negative int values
+  if(isHardwareSerial) {
+	  if(data<4096) Hardwareserial->print(0, HEX);
+	  if(data<256)  Hardwareserial->print(0, HEX);
+	  if(data<16)   Hardwareserial->print(0, HEX);
+	  Hardwareserial->print(uint16_t(data), HEX);
+  } else {
+	  if(data<4096) serial->print(0, HEX);
+	  if(data<256)  serial->print(0, HEX);
+	  if(data<16)   serial->print(0, HEX);
+	  serial->print(uint16_t(data), HEX);
+  }
 }
 
 /// Convert HEX to Decimal
