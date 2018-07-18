@@ -78,6 +78,18 @@
 #define nullptr            0x00
 #endif
 
+
+#ifndef USBSerial
+struct USBSerial {
+	template<typename... ARGS> void begin(ARGS...) {}
+	template<typename... ARGS> void print(ARGS...) {}
+	template<typename... ARGS> void println(ARGS...) {}
+	template<typename... ARGS> uint8_t isConnected(ARGS...) {return true;}
+	template<typename... ARGS> uint8_t available(ARGS...) {}
+	template<typename... ARGS> uint8_t read(ARGS...) {}
+};
+#endif
+
 // -------------------------------------------
 // SmartSSP - Smart Serial Protocol
 // -------------------------------------------
