@@ -79,7 +79,8 @@
 #endif
 
 
-#ifndef USBSerial
+//#if !defined(__STM32F1__)
+#ifndef SERIAL_USB
 struct USBSerial {
 	template<typename... ARGS> void begin(ARGS...) {}
 	template<typename... ARGS> void print(ARGS...) {}
