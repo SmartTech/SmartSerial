@@ -35,6 +35,10 @@
  *    - Change 'serial' object from Stream* to USBSerial*
  *    - Fixed USBSerial buffer overflow by add "if(!serial->isConnected())"
  * ------------------------------------------------------------------------
+ *   SmartSerial v1.2 :
+ *    - Add CompositeSerial support (COMPOSITE_SERIAL_SUPPORT)
+ *    - Fix debug() with 4 args
+ * ------------------------------------------------------------------------
  */
 
 #ifndef _SMART_SERIAL_H_
@@ -42,9 +46,15 @@
 
 #include <Arduino.h>
 
+#define COMPOSITE_SERIAL_SUPPORT
+
 //#define DEBUG_SERIAL
 #ifdef DEBUG_SERIAL
 #include <SmartDebug.h>
+#endif
+
+#ifdef COMPOSITE_SERIAL_SUPPORT
+#include <USBComposite.h>
 #endif
 
 #define PIN_UNCONNECTED      -1
@@ -79,7 +89,6 @@
 #endif
 
 
-//#if !defined(__STM32F1__)
 #ifndef SERIAL_USB
 struct USBSerial {
 	template<typename... ARGS> void begin(ARGS...) {}
@@ -101,10 +110,13 @@ class SmartSSP {
     bool isHardwareSerial = false;
     HardwareSerial* Hardwareserial;
     #ifdef _VARIANT_ARDUINO_STM32_
-    USBSerial*      serial;
-	#else
-	HardwareSerial* serial;
+	USBSerial*           usbSerial = nullptr;
+	#ifdef COMPOSITE_SERIAL_SUPPORT
+	USBCompositeSerial*  compositeSerial = nullptr;
 	#endif
+	#endif
+	
+	Stream* serial;
 		
     bool    parseData();
     void    processData();
@@ -182,6 +194,9 @@ class SmartSSP {
     SmartSSP(HardwareSerial* _serial, int pinTXen = PIN_UNCONNECTED);
     #ifdef _VARIANT_ARDUINO_STM32_
       SmartSSP(USBSerial*    _serial);
+	  #ifdef COMPOSITE_SERIAL_SUPPORT
+	  SmartSSP(USBCompositeSerial*    _serial);
+	  #endif
     #endif
 	
     void     begin();
@@ -281,7 +296,10 @@ class SmartSSP {
     void simplePrint(T... args) {
 		if(!_isDebug) return;
 		#ifdef _VARIANT_ARDUINO_STM32_
-		if(!serial->isConnected()) return;
+	    if(usbSerial!=nullptr && !usbSerial->isConnected()) return;
+	    #ifdef COMPOSITE_SERIAL_SUPPORT
+	    if(compositeSerial!=nullptr && !compositeSerial->isConnected()) return;
+	    #endif
 		#endif
 		if(isHardwareSerial) Hardwareserial->print(args...);
         else serial->print(args...);
@@ -291,7 +309,10 @@ class SmartSSP {
 	void debug(F arg, S index, T... args) {
 		if(!_isDebug) return;
 		#ifdef _VARIANT_ARDUINO_STM32_
-		if(!serial->isConnected()) return;
+	    if(usbSerial!=nullptr && !usbSerial->isConnected()) return;
+	    #ifdef COMPOSITE_SERIAL_SUPPORT
+	    if(compositeSerial!=nullptr && !compositeSerial->isConnected()) return;
+	    #endif
 		#endif
 		if(isHardwareSerial)  {
 			Hardwareserial->print(TAG_DBG);
@@ -322,7 +343,10 @@ class SmartSSP {
     void debug(F arg, T... args) {
 		if(!_isDebug) return;
 		#ifdef _VARIANT_ARDUINO_STM32_
-		if(!serial->isConnected()) return;
+	    if(usbSerial!=nullptr && !usbSerial->isConnected()) return;
+	    #ifdef COMPOSITE_SERIAL_SUPPORT
+	    if(compositeSerial!=nullptr && !compositeSerial->isConnected()) return;
+	    #endif
 		#endif
 		if(isHardwareSerial)  {
 			Hardwareserial->print(TAG_DBG);
@@ -347,7 +371,10 @@ class SmartSSP {
     void debug(F arg, uint32_t size) {
 		if(!_isDebug) return;
 		#ifdef _VARIANT_ARDUINO_STM32_
-		if(!serial->isConnected()) return;
+	    if(usbSerial!=nullptr && !usbSerial->isConnected()) return;
+	    #ifdef COMPOSITE_SERIAL_SUPPORT
+	    if(compositeSerial!=nullptr && !compositeSerial->isConnected()) return;
+	    #endif
 		#endif
 		if(isHardwareSerial)  {
 			Hardwareserial->print(TAG_DBG);
@@ -365,7 +392,10 @@ class SmartSSP {
     template<class... T>
     void error(T... args) {
 	    #ifdef _VARIANT_ARDUINO_STM32_
-	    if(!serial->isConnected()) return;
+	    if(usbSerial!=nullptr && !usbSerial->isConnected()) return;
+	    #ifdef COMPOSITE_SERIAL_SUPPORT
+	    if(compositeSerial!=nullptr && !compositeSerial->isConnected()) return;
+	    #endif
 	    #endif
 	    if(isHardwareSerial)  {
 		    Hardwareserial->print(TAG_DBG);
@@ -418,7 +448,10 @@ class SmartMSP : public SmartSSP {
 	
 	SmartMSP(HardwareSerial* _serial, int pinTXen = PIN_UNCONNECTED) : SmartSSP(_serial, pinTXen) {}
     #ifdef _VARIANT_ARDUINO_STM32_
-      SmartMSP(USBSerial*    _serial) : SmartSSP(_serial) {}
+      SmartMSP(USBSerial*       _serial) : SmartSSP(_serial) {}
+	  #ifdef COMPOSITE_SERIAL_SUPPORT
+	  SmartMSP(USBCompositeSerial* _serial) : SmartSSP(_serial) {}
+	  #endif
     #endif
 	
     void attachRequest(void (*function)(int)) { user_onRequest = function; }

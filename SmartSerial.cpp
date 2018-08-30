@@ -30,10 +30,17 @@
 
 #ifdef _VARIANT_ARDUINO_STM32_
 SmartSSP::SmartSSP(USBSerial* _serial) :
-  serial(_serial), _inputChar()
+  usbSerial(_serial), _inputChar()
 {
   construct();
 }
+#ifdef COMPOSITE_SERIAL_SUPPORT
+SmartSSP::SmartSSP(USBCompositeSerial* _serial) :
+  compositeSerial(_serial), _inputChar()
+{
+  construct();
+}
+#endif
 #endif
 
 SmartSSP::SmartSSP(HardwareSerial* _serial, int pinTXen) :
@@ -53,6 +60,13 @@ void SmartSSP::construct() {
   inPacket.parity     = 0;
   inPacket.datasize   = 0;
   _inCounter          = 0;
+  if(isHardwareSerial) serial = Hardwareserial;
+  else {
+	  if(usbSerial!=nullptr) serial = usbSerial;
+	  #ifdef COMPOSITE_SERIAL_SUPPORT
+	  if(compositeSerial!=nullptr) serial = compositeSerial;
+	  #endif
+  }
 }
 
 /// Begin using default settings:
@@ -65,7 +79,7 @@ void SmartSSP::begin() {
 /// Begin using custom settings
 void SmartSSP::begin(long baud, uint8_t nodeID) {
   if(isHardwareSerial) Hardwareserial->begin(_baud=baud);
-  else serial->begin(baud);
+  //else serial->begin(baud);
   setNodeID(nodeID);
   if(_pinTX != PIN_UNCONNECTED) {
 	  pinMode(_pinTX, OUTPUT);
@@ -111,7 +125,10 @@ void SmartSSP::sendPacket() {
 
   } else {
 	  #ifdef _VARIANT_ARDUINO_STM32_
-	  if(!serial->isConnected()) return;
+	    if(usbSerial!=nullptr && !usbSerial->isConnected()) return;
+	    #ifdef COMPOSITE_SERIAL_SUPPORT
+	    if(compositeSerial!=nullptr && !compositeSerial->isConnected()) return;
+	    #endif
 	  #endif
 	  //serial->println();
 	  serial->print(TAG_MSP);
