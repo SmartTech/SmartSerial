@@ -151,6 +151,7 @@ bool SmartSSP::handle() {
   int available;
   if(isHardwareSerial) available = Hardwareserial->available();
   else available = serial->available();
+  if(available) this->debug("Available MSP data : ", available);
   while(available) {
     char inChar;
 	if(isHardwareSerial) inChar = (char) Hardwareserial->read();
@@ -158,11 +159,15 @@ bool SmartSSP::handle() {
     if(inChar != '\n') {
       if(inChar != '\r') {
         if(_inCounter<5) _checkMSP += inChar;
+        else if(_inCounter<MSP_INPUT_BUFFER_SIZE+5) _inputChar[_inCounter-5] = inChar;
         else _inputChar[_inCounter-5] = inChar;
         _inCounter++;
       }
     } else {
+	  this->debug("End of line available : ", available);
+	  this->debug("Data : ", _inputChar);
       if(_checkMSP.equals(TAG_MSP)) {
+		this->debug("Has MSP data");
         if(parseData()) {
           //serial->flush();
 		  if(_callbackTimeout) {
@@ -233,6 +238,7 @@ void SmartSSP::processData() {
 
 bool SmartSSP::parseData() {
   if(_inputChar[0] != 'T') return false;
+  this->debug("Parse MSP data");
   _checkedParity = 0;
   _checkedParity ^= inPacket.packetType = hex_to_dec(_inputChar[1])*16  + hex_to_dec(_inputChar[2]);
   _checkedParity ^= inPacket.nodeID     = hex_to_dec(_inputChar[4])*16  + hex_to_dec(_inputChar[5]);
@@ -294,17 +300,28 @@ uint8_t SmartSSP::hex_to_dec(uint8_t in) {
   return HEX_DEC_ERROR;
 }
 
+void SmartSSP::printHexPayload() {
+#ifdef DEBUG_SERIAL
+	String hexPayload = "";
+	for(uint8_t i=0; i<inPacket.datasize; i++) {
+		if(inPacket.payload[i] < 16) hexPayload += "0";
+		hexPayload += String(inPacket.payload[i], HEX);
+	}
+	this->debug("Payload:   " + hexPayload);//printlnDebug(inPacket.payload,HEX);
+#endif
+}
+
 /// printInfo:
 void SmartSSP::printInfo() {
 #ifdef DEBUG_SERIAL
-  printlnDebug("[DBG] >>> inPacket info <<<");
-  printDebug  ("[DBG] Type:      "); printlnDebug(inPacket.packetType, HEX);
-  printDebug  ("[DBG] NodeID:    "); printlnDebug(inPacket.nodeID,     HEX);
-  printDebug  ("[DBG] CommandID: "); printlnDebug(inPacket.commandID,  HEX);
-  printDebug  ("[DBG] Datasize:  "); printlnDebug(inPacket.datasize,   HEX);
-  printDebug  ("[DBG] Payload:   "); printlnDebug("...");//printlnDebug(inPacket.payload,HEX);
-  printDebug  ("[DBG] Parity:    "); printlnDebug(inPacket.parity,     HEX);
-  printDebug  ("[DBG] Checked:   "); printlnDebug(_checkedParity,      HEX);
+  this->debug(">>> inPacket info <<<");
+  this->debug("Type:      " + String(inPacket.packetType, HEX));
+  this->debug("NodeID:    " + String(inPacket.nodeID,     HEX));
+  this->debug("CommandID: " + String(inPacket.commandID,  HEX));
+  this->debug("Datasize:  " + String(inPacket.datasize,   HEX));
+  printHexPayload();
+  this->debug("Parity:    " + String(inPacket.parity,     HEX));
+  this->debug("Checked:   " + String(_checkedParity,      HEX));
 #endif
 }
 

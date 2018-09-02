@@ -48,9 +48,9 @@
 
 #define COMPOSITE_SERIAL_SUPPORT
 
-//#define DEBUG_SERIAL
+#define DEBUG_SERIAL
 #ifdef DEBUG_SERIAL
-#include <SmartDebug.h>
+//#include <SmartDebug.h>
 #endif
 
 #ifdef COMPOSITE_SERIAL_SUPPORT
@@ -88,6 +88,7 @@
 #define nullptr            0x00
 #endif
 
+#define MSP_INPUT_BUFFER_SIZE    256
 
 #ifndef SERIAL_USB
 struct USBSerial {
@@ -121,6 +122,7 @@ class SmartSSP {
     bool    parseData();
     void    processData();
     void    sendPacket();
+	void    printHexPayload();
     void    printInfo();
     void    hexPrinting(uint8_t& data);
     void    hexPrinting(int16_t& data);
@@ -141,7 +143,7 @@ class SmartSSP {
     } inPacket, outPacket;
     
 	int      _pinTX = PIN_UNCONNECTED;
-    char     _inputChar[100];
+    char     _inputChar[MSP_INPUT_BUFFER_SIZE];
     uint8_t  _inCounter;
     uint8_t  _checkedParity;
     String   _checkMSP              = "";
