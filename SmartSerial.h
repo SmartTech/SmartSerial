@@ -46,14 +46,14 @@
 
 #include <Arduino.h>
 
-#define COMPOSITE_SERIAL_SUPPORT
 
 //#define DEBUG_SERIAL
 #ifdef DEBUG_SERIAL
 //#include <SmartDebug.h>
 #endif
 
-#ifdef COMPOSITE_SERIAL_SUPPORT
+#ifdef _VARIANT_ARDUINO_STM32_
+#define COMPOSITE_SERIAL_SUPPORT
 #include <USBComposite.h>
 #endif
 
