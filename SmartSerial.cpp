@@ -151,7 +151,9 @@ bool SmartSSP::handle() {
   int available;
   if(isHardwareSerial) available = Hardwareserial->available();
   else available = serial->available();
+  #ifdef DEBUG_SERIAL
   if(available) this->debug("Available MSP data : ", available);
+  #endif
   while(available) {
     char inChar;
 	if(isHardwareSerial) inChar = (char) Hardwareserial->read();
@@ -164,10 +166,14 @@ bool SmartSSP::handle() {
         _inCounter++;
       }
     } else {
+	  #ifdef DEBUG_SERIAL
 	  this->debug("End of line available : ", available);
 	  this->debug("Data : ", _inputChar);
+	  #endif
       if(_checkMSP.equals(TAG_MSP)) {
+	    #ifdef DEBUG_SERIAL
 		this->debug("Has MSP data");
+		#endif
         if(parseData()) {
           //serial->flush();
 		  if(_callbackTimeout) {
@@ -238,7 +244,9 @@ void SmartSSP::processData() {
 
 bool SmartSSP::parseData() {
   if(_inputChar[0] != 'T') return false;
+  #ifdef DEBUG_SERIAL
   this->debug("Parse MSP data");
+  #endif
   _checkedParity = 0;
   _checkedParity ^= inPacket.packetType = hex_to_dec(_inputChar[1])*16  + hex_to_dec(_inputChar[2]);
   _checkedParity ^= inPacket.nodeID     = hex_to_dec(_inputChar[4])*16  + hex_to_dec(_inputChar[5]);

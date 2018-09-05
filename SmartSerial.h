@@ -48,7 +48,7 @@
 
 #define COMPOSITE_SERIAL_SUPPORT
 
-#define DEBUG_SERIAL
+//#define DEBUG_SERIAL
 #ifdef DEBUG_SERIAL
 //#include <SmartDebug.h>
 #endif
