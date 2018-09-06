@@ -47,7 +47,7 @@
 #include <Arduino.h>
 
 
-//#define DEBUG_SERIAL
+#define DEBUG_SERIAL
 #ifdef DEBUG_SERIAL
 //#include <SmartDebug.h>
 #endif
@@ -158,6 +158,8 @@ class SmartSSP {
     bool     _errorUsage            = true;
 	uint8_t  _isDebug               = false;
 	
+	String   inString = "";
+		
 	virtual void request(int) {}
 	virtual void value(int, int) {}
 	virtual void array(int, uint8_t*, int) {}
@@ -201,6 +203,8 @@ class SmartSSP {
 	  #endif
     #endif
 	
+	SmartSSP* debugPort = nullptr;
+	
     void     begin();
     void     begin(long baud, uint8_t nodeID = 0);
     bool     handle();
@@ -214,7 +218,7 @@ class SmartSSP {
     uint8_t  getSize();
     uint8_t  getPayload(byte num);
     uint8_t* getPayload();
-	
+		
 	uint8_t isTX() {
 		return _txEnabled;
 	}
@@ -455,6 +459,8 @@ class SmartMSP : public SmartSSP {
 	  SmartMSP(USBCompositeSerial* _serial) : SmartSSP(_serial) {}
 	  #endif
     #endif
+	
+	void setDebugPort(SmartSSP* _port) { debugPort = _port; };
 	
     void attachRequest(void (*function)(int)) { user_onRequest = function; }
     void attachValue(void (*function)(int, int)) { user_onValue = function; }

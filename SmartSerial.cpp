@@ -154,7 +154,7 @@ bool SmartSSP::handle() {
   if(isHardwareSerial) available = Hardwareserial->available();
   else available = serial->available();
   #ifdef DEBUG_SERIAL
-  if(available) this->debug("Available MSP data : ", available);
+  //if(available) if(debugPort!=nullptr) debugPort->debug("Available MSP data : ", available);
   #endif
   while(available) {
     char inChar;
@@ -162,19 +162,24 @@ bool SmartSSP::handle() {
 	else inChar = (char) serial->read();
     if(inChar != '\n') {
       if(inChar != '\r') {
-        if(_inCounter<5) _checkMSP += inChar;
-        else if(_inCounter<MSP_INPUT_BUFFER_SIZE+5) _inputChar[_inCounter-5] = inChar;
-        else _inputChar[_inCounter-5] = inChar;
-        _inCounter++;
+        if(_inCounter<5) {
+			_checkMSP += inChar;
+			_inCounter++;
+		}
+        else if(_inCounter<MSP_INPUT_BUFFER_SIZE+5) {
+			_inputChar[_inCounter-5] = inChar;
+			_inCounter++;
+			inString += inChar;
+		}
       }
     } else {
 	  #ifdef DEBUG_SERIAL
-	  this->debug("End of line available : ", available);
-	  this->debug("Data : ", _inputChar);
+	  if(debugPort!=nullptr) debugPort->debug("End of line available : ", available);
+	  if(debugPort!=nullptr) debugPort->debug("Data : ", _inputChar);
 	  #endif
       if(_checkMSP.equals(TAG_MSP)) {
 	    #ifdef DEBUG_SERIAL
-		this->debug("Has MSP data");
+		if(debugPort!=nullptr) debugPort->debug("Has MSP data");
 		#endif
         if(parseData()) {
           //serial->flush();
@@ -185,6 +190,8 @@ bool SmartSSP::handle() {
           _ready     = true;
           _checkMSP  = "";
           _inCounter = 0;
+		  memset(_inputChar, 0, MSP_INPUT_BUFFER_SIZE);
+		  inString = "";
           return _ready;
         }
         else { // Parse packet error
@@ -196,9 +203,15 @@ bool SmartSSP::handle() {
 	  }
       _checkMSP = "";
       _inCounter = 0;
+	  inString = "";
+	  memset(_inputChar, 0, MSP_INPUT_BUFFER_SIZE);
     }
-    if(isHardwareSerial) available = Hardwareserial->available();
+    if(isHardwareSerial) {
+		delay(1);
+		available = Hardwareserial->available();
+	}
     else available = serial->available();
+	
   }
   if(processDataFlag && (micros() >= _callbackTimeoutMicros)) {
 	  processDataFlag = false;
@@ -245,29 +258,62 @@ void SmartSSP::processData() {
 }
 
 bool SmartSSP::parseData() {
-  if(_inputChar[0] != 'T') return false;
+  if(inString.c_str()[0] != 'T') return false;
   #ifdef DEBUG_SERIAL
-  this->debug("Parse MSP data");
+  if(debugPort!=nullptr) debugPort->debug("Parse MSP data");
   #endif
   _checkedParity = 0;
-  _checkedParity ^= inPacket.packetType = hex_to_dec(_inputChar[1])*16  + hex_to_dec(_inputChar[2]);
-  _checkedParity ^= inPacket.nodeID     = hex_to_dec(_inputChar[4])*16  + hex_to_dec(_inputChar[5]);
-  _checkedParity ^= inPacket.commandID  = hex_to_dec(_inputChar[7])*16  + hex_to_dec(_inputChar[8]);
-  _checkedParity ^= inPacket.datasize   = hex_to_dec(_inputChar[10])*16 + hex_to_dec(_inputChar[11]);
+  _checkedParity ^= inPacket.packetType = hex_to_dec(inString.c_str()[1])*16  + hex_to_dec(inString.c_str()[2]);
+  _checkedParity ^= inPacket.nodeID     = hex_to_dec(inString.c_str()[4])*16  + hex_to_dec(inString.c_str()[5]);
+  _checkedParity ^= inPacket.commandID  = hex_to_dec(inString.c_str()[7])*16  + hex_to_dec(inString.c_str()[8]);
+  _checkedParity ^= inPacket.datasize   = hex_to_dec(inString.c_str()[10])*16 + hex_to_dec(inString.c_str()[11]);
   if(inPacket.payload) delete[] inPacket.payload;
   inPacket.payload = new uint8_t[inPacket.datasize];
   for(int i=0; i<inPacket.datasize; i++) {
 	unsigned int indexPayload = i*2+13;
-	inPacket.payload[i] = hex_to_dec(_inputChar[indexPayload])*16 + hex_to_dec(_inputChar[indexPayload+1]);
+	inPacket.payload[i] = hex_to_dec(inString.c_str()[indexPayload])*16 + hex_to_dec(inString.c_str()[indexPayload+1]);
     _checkedParity ^= inPacket.payload[i];
   }
   unsigned int indexParity = inPacket.datasize*2+14;
-  inPacket.parity = hex_to_dec(_inputChar[indexParity])*16 + hex_to_dec(_inputChar[indexParity+1]);
+  inPacket.parity = hex_to_dec(inString.c_str()[indexParity])*16 + hex_to_dec(inString.c_str()[indexParity+1]);
   #ifdef DEBUG_SERIAL
+	if(debugPort!=nullptr) debugPort->debug("MSP", "inPacket.datasize", inPacket.datasize);
+	if(debugPort!=nullptr) debugPort->debug("MSP", "indexParity",       indexParity);
+	if(debugPort!=nullptr) debugPort->debug("MSP", "inPacket.parity",   inPacket.parity);
+	if(debugPort!=nullptr) debugPort->debug("MSP", "inString",          inString);
     printInfo();
   #endif
   return (_checkedParity == inPacket.parity);
 }
+
+//bool SmartSSP::parseData() {
+//  if(_inputChar[0] != 'T') return false;
+//  #ifdef DEBUG_SERIAL
+//  if(debugPort!=nullptr) debugPort->debug("Parse MSP data");
+//  #endif
+//  _checkedParity = 0;
+//  _checkedParity ^= inPacket.packetType = hex_to_dec(_inputChar[1])*16  + hex_to_dec(_inputChar[2]);
+//  _checkedParity ^= inPacket.nodeID     = hex_to_dec(_inputChar[4])*16  + hex_to_dec(_inputChar[5]);
+//  _checkedParity ^= inPacket.commandID  = hex_to_dec(_inputChar[7])*16  + hex_to_dec(_inputChar[8]);
+//  _checkedParity ^= inPacket.datasize   = hex_to_dec(_inputChar[10])*16 + hex_to_dec(_inputChar[11]);
+//  if(inPacket.payload) delete[] inPacket.payload;
+//  inPacket.payload = new uint8_t[inPacket.datasize];
+//  for(int i=0; i<inPacket.datasize; i++) {
+//	unsigned int indexPayload = i*2+13;
+//	inPacket.payload[i] = hex_to_dec(_inputChar[indexPayload])*16 + hex_to_dec(_inputChar[indexPayload+1]);
+//    _checkedParity ^= inPacket.payload[i];
+//  }
+//  unsigned int indexParity = inPacket.datasize*2+14;
+//  inPacket.parity = hex_to_dec(_inputChar[indexParity])*16 + hex_to_dec(_inputChar[indexParity+1]);
+//  #ifdef DEBUG_SERIAL
+//	if(debugPort!=nullptr) debugPort->debug("MSP", "inPacket.datasize", inPacket.datasize);
+//	if(debugPort!=nullptr) debugPort->debug("MSP", "indexParity",       indexParity);
+//	if(debugPort!=nullptr) debugPort->debug("MSP", "inPacket.parity",   inPacket.parity);
+//	if(debugPort!=nullptr) debugPort->debug("MSP", "_inputChar",       _inputChar);
+//    printInfo();
+//  #endif
+//  return (_checkedParity == inPacket.parity);
+//}
 
 /// 
 bool SmartSSP::available() {
@@ -278,10 +324,10 @@ bool SmartSSP::available() {
 /// HexPrinting: helper function to print data with a constant field width (1 hex values)
 void SmartSSP::hexPrinting(uint8_t& data) {
   if(isHardwareSerial) {
-	  if(data<16) Hardwareserial->print(0, HEX);
+	  if(data<16) Hardwareserial->print(0);
 	  Hardwareserial->print(data, HEX);
   } else {
-	  if(data<16) serial->print(0, HEX);
+	  if(data<16) serial->print(0);
 	  serial->print(data, HEX);
   }
 }
@@ -289,14 +335,14 @@ void SmartSSP::hexPrinting(uint8_t& data) {
 /// HexPrinting: helper function to print data with a constant field width (2 hex values)
 void SmartSSP::hexPrinting(int16_t& data) {
   if(isHardwareSerial) {
-	  if(data<4096) Hardwareserial->print(0, HEX);
-	  if(data<256)  Hardwareserial->print(0, HEX);
-	  if(data<16)   Hardwareserial->print(0, HEX);
+	  if(data<4096) Hardwareserial->print(0);
+	  if(data<256)  Hardwareserial->print(0);
+	  if(data<16)   Hardwareserial->print(0);
 	  Hardwareserial->print(uint16_t(data), HEX);
   } else {
-	  if(data<4096) serial->print(0, HEX);
-	  if(data<256)  serial->print(0, HEX);
-	  if(data<16)   serial->print(0, HEX);
+	  if(data<4096) serial->print(0);
+	  if(data<256)  serial->print(0);
+	  if(data<16)   serial->print(0);
 	  serial->print(uint16_t(data), HEX);
   }
 }
@@ -317,21 +363,21 @@ void SmartSSP::printHexPayload() {
 		if(inPacket.payload[i] < 16) hexPayload += "0";
 		hexPayload += String(inPacket.payload[i], HEX);
 	}
-	this->debug("Payload:   " + hexPayload);//printlnDebug(inPacket.payload,HEX);
+	if(debugPort!=nullptr) debugPort->debug("Payload:   " + hexPayload);//printlnDebug(inPacket.payload,HEX);
 #endif
 }
 
 /// printInfo:
 void SmartSSP::printInfo() {
 #ifdef DEBUG_SERIAL
-  this->debug(">>> inPacket info <<<");
-  this->debug("Type:      " + String(inPacket.packetType, HEX));
-  this->debug("NodeID:    " + String(inPacket.nodeID,     HEX));
-  this->debug("CommandID: " + String(inPacket.commandID,  HEX));
-  this->debug("Datasize:  " + String(inPacket.datasize,   HEX));
+  if(debugPort!=nullptr) debugPort->debug(">>> inPacket info <<<");
+  if(debugPort!=nullptr) debugPort->debug("Type:      " + String(inPacket.packetType, HEX));
+  if(debugPort!=nullptr) debugPort->debug("NodeID:    " + String(inPacket.nodeID,     HEX));
+  if(debugPort!=nullptr) debugPort->debug("CommandID: " + String(inPacket.commandID,  HEX));
+  if(debugPort!=nullptr) debugPort->debug("Datasize:  " + String(inPacket.datasize,   HEX));
   printHexPayload();
-  this->debug("Parity:    " + String(inPacket.parity,     HEX));
-  this->debug("Checked:   " + String(_checkedParity,      HEX));
+  if(debugPort!=nullptr) debugPort->debug("Parity:    " + String(inPacket.parity,     HEX));
+  if(debugPort!=nullptr) debugPort->debug("Checked:   " + String(_checkedParity,      HEX));
 #endif
 }
 
