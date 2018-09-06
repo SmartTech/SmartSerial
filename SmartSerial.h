@@ -384,14 +384,10 @@ class SmartSSP {
 		#endif
 		if(isHardwareSerial)  {
 			Hardwareserial->print(TAG_DBG);
-			Hardwareserial->print(arg);
-			Hardwareserial->println(size);
-			//Hardwareserial->println(arg, size); // ???
+			Hardwareserial->println(arg, size);
 		} else {
 			serial->print(TAG_DBG);
-			serial->print(arg);
-			serial->println(size);
-			//serial->println(arg, size); // ???
+			serial->println(arg, size);
 		}
     };
     
