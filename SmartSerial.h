@@ -307,8 +307,7 @@ class SmartSSP {
 	    if(compositeSerial!=nullptr && !compositeSerial->isConnected()) return;
 	    #endif
 		#endif
-		if(isHardwareSerial) Hardwareserial->print(args...);
-        else serial->print(args...);
+        serial->print(args...);
     }
 	
 	template<class F, class S, class... T >
@@ -320,29 +319,16 @@ class SmartSSP {
 	    if(compositeSerial!=nullptr && !compositeSerial->isConnected()) return;
 	    #endif
 		#endif
-		if(isHardwareSerial)  {
-			Hardwareserial->print(TAG_DBG);
-			Hardwareserial->print(arg);
-			Hardwareserial->print("[");
-			Hardwareserial->print(index);
-			Hardwareserial->print("]");
-			if(sizeof...(args) > 0) {
-			  Hardwareserial->print(": ");
-			  simplePrint(args...);
-			}
-			Hardwareserial->println();
-		} else {
-			serial->print(TAG_DBG);
-			serial->print(arg);
-			serial->print("[");
-			serial->print(index);
-			serial->print("]");
-			if(sizeof...(args) > 0) {
-			  serial->print(": ");
-			  simplePrint(args...);
-			}
-			serial->println();
-		}
+        serial->print(TAG_DBG);
+        serial->print(arg);
+        serial->print("[");
+        serial->print(index);
+        serial->print("]");
+        if(sizeof...(args) > 0) {
+          serial->print(": ");
+          simplePrint(args...);
+        }
+        serial->println();
     };
     
     template<class F, class... T>
@@ -354,23 +340,13 @@ class SmartSSP {
 	    if(compositeSerial!=nullptr && !compositeSerial->isConnected()) return;
 	    #endif
 		#endif
-		if(isHardwareSerial)  {
-			Hardwareserial->print(TAG_DBG);
-			Hardwareserial->print(arg);
-			if(sizeof...(args) > 0) {
-			  Hardwareserial->print(": ");
-			  simplePrint(args...);
-			}
-			Hardwareserial->println();
-		} else {
-			serial->print(TAG_DBG);
-			serial->print(arg);
-			if(sizeof...(args) > 0) {
-			  serial->print(": ");
-			  simplePrint(args...);
-			}
-			serial->println();
-		}
+        serial->print(TAG_DBG);
+        serial->print(arg);
+        if(sizeof...(args) > 0) {
+          serial->print(": ");
+          simplePrint(args...);
+        }
+        serial->println();
     };
 	
 	template<class F>
@@ -382,17 +358,13 @@ class SmartSSP {
 	    if(compositeSerial!=nullptr && !compositeSerial->isConnected()) return;
 	    #endif
 		#endif
-		if(isHardwareSerial)  {
-			Hardwareserial->print(TAG_DBG);
-			Hardwareserial->println(arg, size);
-		} else {
-			serial->print(TAG_DBG);
-			serial->println(arg, size);
-		}
+        serial->print(TAG_DBG);
+        serial->println(arg, size);
     };
     
     template<class... T>
     void error(T... args) {
+<<<<<<< HEAD
 	    #ifdef _VARIANT_ARDUINO_STM32_
 	    if(usbSerial!=nullptr && !usbSerial->isConnected()) return;
 	    #ifdef COMPOSITE_SERIAL_SUPPORT
@@ -408,6 +380,14 @@ class SmartSSP {
 		    serial->print("error: ");
 		    serial->println(args...);
 		}
+=======
+	  #ifdef _VARIANT_ARDUINO_STM32_
+	  if(!serial->isConnected()) return;
+	  #endif
+      serial->print(TAG_DBG);
+      serial->print("error: ");
+      serial->println(args...);
+>>>>>>> parent of 229edcc... непонятные доработки
     };
 
 };
