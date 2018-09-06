@@ -53,7 +53,7 @@
 #endif
 
 #ifdef _VARIANT_ARDUINO_STM32_
-#define COMPOSITE_SERIAL_SUPPORT
+//#define COMPOSITE_SERIAL_SUPPORT
 #include <USBComposite.h>
 #endif
 
@@ -157,9 +157,7 @@ class SmartSSP {
 	uint32_t _answerTimeoutMicros   = false;
     bool     _errorUsage            = true;
 	uint8_t  _isDebug               = false;
-	
-	String   inString = "";
-		
+			
 	virtual void request(int) {}
 	virtual void value(int, int) {}
 	virtual void array(int, uint8_t*, int) {}
