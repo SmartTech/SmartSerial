@@ -199,7 +199,6 @@ bool SmartSSP::handle() {
       _inCounter = 0;
     }
     if(isHardwareSerial) {
-		delay(1);
 		available = Hardwareserial->available();
 	}
     else available = serial->available();
