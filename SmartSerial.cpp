@@ -224,6 +224,7 @@ bool SmartSSP::handle() {
     }
 <<<<<<< HEAD
     if(isHardwareSerial) {
+		delay(1);
 		available = Hardwareserial->available();
 	}
     else available = serial->available();
