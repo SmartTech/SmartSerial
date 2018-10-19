@@ -63,7 +63,9 @@ void SmartSSP::construct() {
   if(isHardwareSerial) serial = Hardwareserial;
   else {
 	#ifdef _VARIANT_ARDUINO_STM32_
+	  #ifdef SERIAL_USB
 	  if(usbSerial!=nullptr) serial = usbSerial;
+	  #endif
 	  #ifdef COMPOSITE_SERIAL_SUPPORT
 	  if(compositeSerial!=nullptr) serial = compositeSerial;
 	  #endif
