@@ -44,9 +44,9 @@ SmartSSP::SmartSSP(USBCompositeSerial* _serial) :
 #endif
 
 SmartSSP::SmartSSP(HardwareSerial* _serial, int pinTXen) :
-//#ifndef _VARIANT_ARDUINO_STM32_
-//  serial(_serial),
-//#endif
+#ifndef _VARIANT_ARDUINO_STM32_
+  serial(_serial),
+#endif
   Hardwareserial(_serial), _pinTX(pinTXen), _inputChar()
 {
   construct();
@@ -83,7 +83,11 @@ void SmartSSP::begin() {
 /// Begin using custom settings
 void SmartSSP::begin(long baud, uint8_t nodeID) {
   if(isHardwareSerial) Hardwareserial->begin(_baud=baud);
+<<<<<<< HEAD
   //else serial->begin(baud);
+=======
+  else Serial.begin(baud);
+>>>>>>> parent of 229edcc... непонятные доработки
   setNodeID(nodeID);
   if(_pinTX != PIN_UNCONNECTED) {
 	  pinMode(_pinTX, OUTPUT);
@@ -114,7 +118,11 @@ void SmartSSP::sendPacket() {
   
   enableTX();
   
+  #ifdef _VARIANT_ARDUINO_STM32_
+  if(!serial->isConnected()) return;
+  #endif
   
+<<<<<<< HEAD
   
   if(isHardwareSerial) {
 	  //Hardwareserial->println();
@@ -144,6 +152,17 @@ void SmartSSP::sendPacket() {
 	  serial->print(TAG_CRC);   hexPrinting(outPacket.parity);
 	  serial->println();
   }
+=======
+  //serial->println();
+  serial->print(TAG_MSP);
+  serial->print(TAG_TYPE);  hexPrinting(outPacket.packetType);
+  serial->print(TAG_NODE);  hexPrinting(outPacket.nodeID);
+  serial->print(TAG_CMD);   hexPrinting(outPacket.commandID);
+  serial->print(TAG_SIZE);  hexPrinting(outPacket.datasize);
+  serial->print(TAG_DATA);  for(int i=0; i<outPacket.datasize; i++) hexPrinting(outPacket.payload[i]);
+  serial->print(TAG_CRC);   hexPrinting(outPacket.parity);
+  serial->println();
+>>>>>>> parent of 229edcc... непонятные доработки
   
 }
 
@@ -152,6 +171,7 @@ bool SmartSSP::handle() {
   static uint8_t processDataFlag = false;
   if(isTX() && (micros() > _txMicros)) disableTX();
   _ready = false;
+<<<<<<< HEAD
   int available;
   if(isHardwareSerial) available = Hardwareserial->available();
   else available = serial->available();
@@ -162,6 +182,10 @@ bool SmartSSP::handle() {
     char inChar;
 	if(isHardwareSerial) inChar = (char) Hardwareserial->read();
 	else inChar = (char) serial->read();
+=======
+  while(serial->available()) {
+    char inChar = (char) serial->read();
+>>>>>>> parent of 229edcc... непонятные доработки
     if(inChar != '\n') {
       if(inChar != '\r') {
         if(_inCounter<5) _checkMSP += inChar;
@@ -200,11 +224,15 @@ bool SmartSSP::handle() {
       _checkMSP = "";
       _inCounter = 0;
     }
+<<<<<<< HEAD
     if(isHardwareSerial) {
+		delay(1);
 		available = Hardwareserial->available();
 	}
     else available = serial->available();
 	
+=======
+>>>>>>> parent of 229edcc... непонятные доработки
   }
   if(processDataFlag && (micros() >= _callbackTimeoutMicros)) {
 	  processDataFlag = false;
@@ -281,12 +309,12 @@ bool SmartSSP::parseData() {
 
 /// 
 bool SmartSSP::available() {
-  if(isHardwareSerial) return Hardwareserial->available();
   return serial->available();
 }
 
 /// HexPrinting: helper function to print data with a constant field width (1 hex values)
 void SmartSSP::hexPrinting(uint8_t& data) {
+<<<<<<< HEAD
   if(isHardwareSerial) {
 	  if(data<16) Hardwareserial->print(0);
 	  Hardwareserial->print(data, HEX);
@@ -294,10 +322,15 @@ void SmartSSP::hexPrinting(uint8_t& data) {
 	  if(data<16) serial->print(0);
 	  serial->print(data, HEX);
   }
+=======
+  if(data<16) serial->print(0, HEX);
+  serial->print(data, HEX);
+>>>>>>> parent of 229edcc... непонятные доработки
 }
 
 /// HexPrinting: helper function to print data with a constant field width (2 hex values)
 void SmartSSP::hexPrinting(int16_t& data) {
+<<<<<<< HEAD
   if(isHardwareSerial) {
 	  if(data<4096) Hardwareserial->print(0);
 	  if(data<256)  Hardwareserial->print(0);
@@ -309,6 +342,12 @@ void SmartSSP::hexPrinting(int16_t& data) {
 	  if(data<16)   serial->print(0);
 	  serial->print(uint16_t(data), HEX);
   }
+=======
+  if(data<4096) serial->print(0, HEX);
+  if(data<256)  serial->print(0, HEX);
+  if(data<16)   serial->print(0, HEX);
+  serial->print(uint16_t(data), HEX);              // casting to suppress FFFF for negative int values
+>>>>>>> parent of 229edcc... непонятные доработки
 }
 
 /// Convert HEX to Decimal
